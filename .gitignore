@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+recordings/
+*.ts
+*.mp4
+.pytest_cache/
+.coverage

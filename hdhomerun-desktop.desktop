@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=HDHomeRun Desktop
+GenericName=Digital TV Tuner, EPG & DVR
+Comment=Scan, manage, and block HDHomeRun channels, monitor RF signal strength, view the Program Guide, watch Live TV, and record to local disk
+Exec=/home/daniel/Apps/HDHomerun_LInux_Desktop/run.sh
+Icon=video-display
+Terminal=false
+Categories=AudioVideo;Video;TV;
+Keywords=HDHomeRun;TV;ATSC;Tuner;EPG;DVR;Signal;
+StartupNotify=true
+

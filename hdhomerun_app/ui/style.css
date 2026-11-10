@@ -1,0 +1,132 @@
+/* GTK4 / Libadwaita custom styles for HDHomeRun Desktop */
+
+.channel-number-badge {
+    background-color: alpha(@accent_bg_color, 0.2);
+    color: @accent_color;
+    font-weight: 800;
+    font-family: monospace;
+    font-size: 1.05em;
+    border-radius: 6px;
+    padding: 4px 10px;
+}
+
+.tag-hd {
+    background-color: alpha(#2ec27e, 0.22);
+    color: #2ec27e;
+    font-weight: 700;
+    font-size: 0.78em;
+    border-radius: 5px;
+    padding: 2px 7px;
+}
+
+.tag-fav {
+    background-color: alpha(#f5c211, 0.22);
+    color: #f5c211;
+    font-weight: 700;
+    font-size: 0.78em;
+    border-radius: 5px;
+    padding: 2px 7px;
+}
+
+.tag-blocked {
+    background-color: alpha(#e01b24, 0.22);
+    color: #ff6b6b;
+    font-weight: 700;
+    font-size: 0.78em;
+    border-radius: 5px;
+    padding: 2px 7px;
+}
+
+.tag-custom {
+    background-color: alpha(#9141ac, 0.25);
+    color: #dc8add;
+    font-weight: 700;
+    font-size: 0.78em;
+    border-radius: 5px;
+    padding: 2px 7px;
+}
+
+.tag-rec {
+    background-color: #e01b24;
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 0.78em;
+    border-radius: 6px;
+    padding: 2px 8px;
+}
+
+.signal-good {
+    color: #2ec27e;
+    font-weight: 700;
+}
+
+.signal-warn {
+    color: #f5c211;
+    font-weight: 700;
+}
+
+.signal-bad {
+    color: #e01b24;
+    font-weight: 700;
+}
+
+.video-surface {
+    background-color: #08090c;
+    border-radius: 10px;
+}
+
+.card-panel {
+    background-color: @card_bg_color;
+    border-radius: 12px;
+    padding: 14px;
+    border: 1px solid alpha(@borders, 0.5);
+}
+
+.tuner-card {
+    background-color: @card_bg_color;
+    border-radius: 12px;
+    padding: 14px;
+    border: 1px solid alpha(@borders, 0.65);
+}
+
+.epg-slot {
+    background-color: alpha(@card_bg_color, 0.95);
+    border: 1px solid alpha(@borders, 0.75);
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+
+.epg-slot:hover {
+    background-color: alpha(@accent_bg_color, 0.18);
+    border-color: @accent_color;
+}
+
+.epg-slot-active {
+    background-color: alpha(@accent_bg_color, 0.25);
+    border: 1px solid @accent_color;
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+
+.epg-slot-recording {
+    background-color: alpha(#e01b24, 0.22);
+    border: 1px solid #e01b24;
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+
+.status-banner {
+    background-color: alpha(@accent_bg_color, 0.14);
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+.dim-label {
+    opacity: 0.7;
+}
+
+.mono-value {
+    font-family: monospace;
+    font-weight: 700;
+}
+
