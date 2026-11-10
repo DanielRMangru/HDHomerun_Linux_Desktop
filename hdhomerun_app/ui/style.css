@@ -130,3 +130,12 @@
     font-weight: 700;
 }
 
+.floating-hud {
+    background-color: rgba(14, 16, 22, 0.82);
+    color: #ffffff;
+    border-radius: 12px;
+    padding: 8px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+

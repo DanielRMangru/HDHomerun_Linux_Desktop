@@ -95,6 +95,18 @@ class MainWindow(Adw.ApplicationWindow):
         switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
         header.set_title_widget(switcher)
 
+        # Right side of HeaderBar: Global Fullscreen toggle button
+        self.btn_window_fullscreen = Gtk.Button()
+        self.btn_window_fullscreen.set_icon_name("view-fullscreen-symbolic")
+        self.btn_window_fullscreen.set_tooltip_text("Toggle Fullscreen (F11)")
+        self.btn_window_fullscreen.connect("clicked", lambda *_: self.toggle_fullscreen())
+        header.pack_end(self.btn_window_fullscreen)
+
+        # Add F11 key shortcut controller
+        key_ctrl = Gtk.EventControllerKey.new()
+        key_ctrl.connect("key-pressed", self._on_key_pressed)
+        self.add_controller(key_ctrl)
+
         root_box.append(header)
 
         # --- Instantiate Views ---
@@ -249,6 +261,39 @@ class MainWindow(Adw.ApplicationWindow):
         self.signal_view.set_device_and_channels(self.current_device, self.channels)
         self.dvr_view.set_device_and_channels(self.current_device, self.channels)
         self.settings_view.set_device(self.current_device)
+
+    def toggle_fullscreen(self) -> None:
+        """Toggle fullscreen mode across the application."""
+        if self.is_fullscreen():
+            self.unfullscreen()
+            self.btn_window_fullscreen.set_icon_name("view-fullscreen-symbolic")
+            self.btn_window_fullscreen.set_tooltip_text("Enter Fullscreen (F11)")
+        else:
+            self.fullscreen()
+            self.btn_window_fullscreen.set_icon_name("view-restore-symbolic")
+            self.btn_window_fullscreen.set_tooltip_text("Exit Fullscreen (F11 / Esc)")
+
+    def _on_key_pressed(
+        self,
+        _ctrl: Gtk.EventControllerKey,
+        keyval: int,
+        _keycode: int,
+        state: Gdk.ModifierType,
+    ) -> bool:
+        # F11 toggles fullscreen
+        if keyval == Gdk.KEY_F11:
+            self.toggle_fullscreen()
+            return True
+        # Escape exits fullscreen if active
+        if keyval == Gdk.KEY_Escape and self.is_fullscreen():
+            self.toggle_fullscreen()
+            return True
+        # Ctrl+B toggles channel sidebar in Live TV
+        if (state & Gdk.ModifierType.CONTROL_MASK) and keyval in (Gdk.KEY_b, Gdk.KEY_B):
+            if self.view_stack.get_visible_child_name() == "live":
+                self.live_view.toggle_sidebar()
+                return True
+        return False
 
     def _on_close_request(self, *_args: object) -> bool:
         self.live_view.stop_playback()

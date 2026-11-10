@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import cairo
 import math
 import threading
 from collections import deque
@@ -10,8 +11,9 @@ from typing import Callable, Deque, List, Optional, Tuple
 import gi
 
 gi.require_version("Gtk", "4.0")
+gi.require_version("Gdk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import GLib, Gtk
+from gi.repository import Gdk, GLib, Gtk
 
 from ..backend.client import (
     ChannelItem,
@@ -124,11 +126,11 @@ class SignalView(Gtk.Box):
         header_row.append(self.lbl_rf_details)
         chart_card.append(header_row)
 
-        self.drawing_area = Gtk.DrawingArea()
-        self.drawing_area.set_content_height(225)
-        self.drawing_area.set_hexpand(True)
-        self.drawing_area.set_draw_func(self._draw_signal_dashboard)
-        chart_card.append(self.drawing_area)
+        self.chart_picture = Gtk.Picture()
+        self.chart_picture.set_size_request(-1, 225)
+        self.chart_picture.set_hexpand(True)
+        self.chart_picture.set_can_shrink(True)
+        chart_card.append(self.chart_picture)
 
         self.append(chart_card)
 
@@ -315,7 +317,7 @@ class SignalView(Gtk.Box):
                 f"Bitrate: {chosen.bitrate_mbps_str} ({chosen.packets_per_sec} pps)"
             )
 
-        self.drawing_area.queue_draw()
+        self._render_signal_dashboard()
         self._rebuild_tuner_cards()
 
     def _rebuild_tuner_cards(self) -> None:
@@ -422,10 +424,14 @@ class SignalView(Gtk.Box):
             row.set_child(hbox)
             self.channel_sig_list.append(row)
 
-    def _draw_signal_dashboard(
-        self, _area: Gtk.DrawingArea, cr, width: int, height: int
-    ) -> None:
-        """Render 3 radial/arc gauges on the left and a 60s rolling line chart on the right."""
+    def _render_signal_dashboard(self) -> None:
+        """Render 3 radial/arc gauges on the left and a 60s rolling line chart on the right using Cairo ImageSurface."""
+        width = max(800, self.get_width() or 800)
+        height = 225
+
+        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
+        cr = cairo.Context(surface)
+
         ss, snq, seq = self.history[-1] if self.history else (0, 0, 0)
 
         # Background
@@ -522,4 +528,12 @@ class SignalView(Gtk.Box):
                     else:
                         cr.line_to(px, py)
                 cr.stroke()
+
+        surface.flush()
+        data = surface.get_data()
+        gbytes = GLib.Bytes.new(data.tobytes())
+        texture = Gdk.MemoryTexture.new(
+            width, height, Gdk.MemoryFormat.B8G8R8A8_PREMULTIPLIED, gbytes, surface.get_stride()
+        )
+        self.chart_picture.set_paintable(texture)
 

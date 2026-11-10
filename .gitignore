@@ -11,3 +11,4 @@ recordings/
 *.mp4
 .pytest_cache/
 .coverage
+

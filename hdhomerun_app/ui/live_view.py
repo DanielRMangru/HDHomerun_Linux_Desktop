@@ -59,24 +59,24 @@ class LiveTVView(Gtk.Box):
         GLib.timeout_add_seconds(2, self._poll_live_telemetry)
 
     def _build_ui(self) -> None:
-        paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
-        paned.set_position(340)
-        paned.set_hexpand(True)
-        paned.set_vexpand(True)
-        self.append(paned)
+        self.paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
+        self.paned.set_position(340)
+        self.paned.set_hexpand(True)
+        self.paned.set_vexpand(True)
+        self.append(self.paned)
 
         # --- Left Sidebar: Channel Switcher ---
-        left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        left_box.set_margin_top(10)
-        left_box.set_margin_bottom(10)
-        left_box.set_margin_start(10)
-        left_box.set_margin_end(6)
-        left_box.set_size_request(290, -1)
+        self.left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        self.left_box.set_margin_top(10)
+        self.left_box.set_margin_bottom(10)
+        self.left_box.set_margin_start(10)
+        self.left_box.set_margin_end(6)
+        self.left_box.set_size_request(290, -1)
 
         self.search_entry = Gtk.SearchEntry()
         self.search_entry.set_placeholder_text("Filter channels or shows...")
         self.search_entry.connect("search-changed", lambda *_: self._populate_channel_list())
-        left_box.append(self.search_entry)
+        self.left_box.append(self.search_entry)
 
         # Filter pills
         filter_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
@@ -95,7 +95,7 @@ class LiveTVView(Gtk.Box):
             btn.set_hexpand(True)
             btn.connect("toggled", self._on_filter_toggled, mode)
             filter_box.append(btn)
-        left_box.append(filter_box)
+        self.left_box.append(filter_box)
 
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_vexpand(True)
@@ -106,9 +106,9 @@ class LiveTVView(Gtk.Box):
         self.listbox.add_css_class("boxed-list")
         self.listbox.connect("row-activated", self._on_row_activated)
         scrolled.set_child(self.listbox)
-        left_box.append(scrolled)
+        self.left_box.append(scrolled)
 
-        paned.set_start_child(left_box)
+        self.paned.set_start_child(self.left_box)
 
         # --- Right Area: Video Player + Controls + EPG + Signal ---
         right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -130,6 +130,34 @@ class LiveTVView(Gtk.Box):
         self.video_picture.set_vexpand(True)
         self.video_picture.set_can_shrink(True)
         self.video_overlay.set_child(self.video_picture)
+
+        # Floating In-Player HUD overlay (appears in Fullscreen / Theater mode)
+        self.hud_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        self.hud_box.add_css_class("floating-hud")
+        self.hud_box.set_halign(Gtk.Align.CENTER)
+        self.hud_box.set_valign(Gtk.Align.END)
+        self.hud_box.set_margin_bottom(24)
+        self.hud_box.set_visible(False)
+
+        self.hud_lbl_channel = Gtk.Label(label="")
+        self.hud_lbl_channel.add_css_class("channel-number-badge")
+        self.hud_box.append(self.hud_lbl_channel)
+
+        self.hud_lbl_title = Gtk.Label(label="")
+        self.hud_lbl_title.add_css_class("heading")
+        self.hud_box.append(self.hud_lbl_title)
+
+        hud_btn_leave = Gtk.Button(label="Exit Fullscreen")
+        hud_btn_leave.set_icon_name("view-restore-symbolic")
+        hud_btn_leave.connect("clicked", lambda *_: self._toggle_theater_fullscreen())
+        self.hud_box.append(hud_btn_leave)
+
+        self.video_overlay.add_overlay(self.hud_box)
+
+        # Double click on video to toggle fullscreen / theater mode
+        click_gesture = Gtk.GestureClick.new()
+        click_gesture.connect("pressed", self._on_video_clicked)
+        self.video_picture.add_controller(click_gesture)
 
         self.placeholder_box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
@@ -154,57 +182,71 @@ class LiveTVView(Gtk.Box):
         right_box.append(self.video_overlay)
 
         # Transport & Action Controls Bar
-        ctrl_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        ctrl_bar.add_css_class("card-panel")
+        self.ctrl_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        self.ctrl_bar.add_css_class("card-panel")
+
+        # Collapse / Toggle Channel Sidebar button
+        self.btn_toggle_sidebar = Gtk.Button()
+        self.btn_toggle_sidebar.set_icon_name("sidebar-show-symbolic")
+        self.btn_toggle_sidebar.set_tooltip_text("Toggle Channel List Sidebar (Ctrl+B)")
+        self.btn_toggle_sidebar.connect("clicked", lambda *_: self.toggle_sidebar())
+        self.ctrl_bar.append(self.btn_toggle_sidebar)
 
         self.btn_play_stop = Gtk.Button()
         self.btn_play_stop.set_icon_name("media-playback-start-symbolic")
         self.btn_play_stop.set_tooltip_text("Play / Stop in Embedded Player")
         self.btn_play_stop.add_css_class("suggested-action")
         self.btn_play_stop.connect("clicked", self._on_toggle_play)
-        ctrl_bar.append(self.btn_play_stop)
+        self.ctrl_bar.append(self.btn_play_stop)
 
         self.btn_mute = Gtk.ToggleButton()
         self.btn_mute.set_icon_name("audio-volume-high-symbolic")
         self.btn_mute.set_tooltip_text("Mute / Unmute Audio")
         self.btn_mute.connect("toggled", self._on_mute_toggled)
-        ctrl_bar.append(self.btn_mute)
+        self.ctrl_bar.append(self.btn_mute)
 
         self.vol_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0.0, 100.0, 5.0)
         self.vol_scale.set_value(85.0)
         self.vol_scale.set_draw_value(False)
         self.vol_scale.set_size_request(110, -1)
         self.vol_scale.connect("value-changed", self._on_volume_changed)
-        ctrl_bar.append(self.vol_scale)
+        self.ctrl_bar.append(self.vol_scale)
 
         spacer = Gtk.Box()
         spacer.set_hexpand(True)
-        ctrl_bar.append(spacer)
+        self.ctrl_bar.append(spacer)
 
         # Instant DVR Record button
         self.btn_instant_rec = Gtk.Button(label="Record Channel")
         self.btn_instant_rec.set_icon_name("media-record-symbolic")
         self.btn_instant_rec.add_css_class("destructive-action")
         self.btn_instant_rec.connect("clicked", self._on_instant_record_clicked)
-        ctrl_bar.append(self.btn_instant_rec)
+        self.ctrl_bar.append(self.btn_instant_rec)
 
         # Check Signal button
         self.btn_signal = Gtk.Button(label="Signal Meter")
         self.btn_signal.set_icon_name("network-cellular-signal-excellent-symbolic")
         self.btn_signal.connect("clicked", self._on_open_signal_clicked)
-        ctrl_bar.append(self.btn_signal)
+        self.ctrl_bar.append(self.btn_signal)
+
+        # Fullscreen / Theater button
+        self.btn_fullscreen = Gtk.Button(label="Fullscreen")
+        self.btn_fullscreen.set_icon_name("view-fullscreen-symbolic")
+        self.btn_fullscreen.set_tooltip_text("Toggle Fullscreen Video (F11)")
+        self.btn_fullscreen.connect("clicked", lambda *_: self._toggle_theater_fullscreen())
+        self.ctrl_bar.append(self.btn_fullscreen)
 
         # Open in External Player (VLC / mpv)
         self.btn_external = Gtk.Button(label="Open in VLC")
         self.btn_external.set_icon_name("external-link-symbolic")
         self.btn_external.connect("clicked", self._on_open_external_player)
-        ctrl_bar.append(self.btn_external)
+        self.ctrl_bar.append(self.btn_external)
 
-        right_box.append(ctrl_bar)
+        right_box.append(self.ctrl_bar)
 
-        # Info & Live Signal Card
-        info_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        info_card.add_css_class("card-panel")
+        # Info & Live Signal Card (collapsible)
+        self.info_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.info_card.add_css_class("card-panel")
 
         top_info_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         self.lbl_now_channel = Gtk.Label(label="No Channel Selected")
@@ -219,22 +261,32 @@ class LiveTVView(Gtk.Box):
         self.lbl_live_signal = Gtk.Label(label="Signal: Idle")
         self.lbl_live_signal.add_css_class("mono-value")
         top_info_row.append(self.lbl_live_signal)
-        info_card.append(top_info_row)
 
+        btn_collapse_info = Gtk.Button()
+        btn_collapse_info.set_icon_name("pan-down-symbolic")
+        btn_collapse_info.set_tooltip_text("Collapse/Expand Program Details")
+        btn_collapse_info.connect("clicked", self._on_toggle_info_card)
+        top_info_row.append(btn_collapse_info)
+
+        self.info_card.append(top_info_row)
+
+        self.info_details_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         self.lbl_now_program = Gtk.Label(label="Choose a channel to view program details and live stream.")
         self.lbl_now_program.set_halign(Gtk.Align.START)
         self.lbl_now_program.set_wrap(True)
         self.lbl_now_program.set_ellipsize(Pango.EllipsizeMode.END)
-        info_card.append(self.lbl_now_program)
+        self.info_details_box.append(self.lbl_now_program)
 
         self.lbl_now_synopsis = Gtk.Label(label="")
         self.lbl_now_synopsis.set_halign(Gtk.Align.START)
         self.lbl_now_synopsis.set_wrap(True)
         self.lbl_now_synopsis.add_css_class("dim-label")
-        info_card.append(self.lbl_now_synopsis)
+        self.info_details_box.append(self.lbl_now_synopsis)
 
-        right_box.append(info_card)
-        paned.set_end_child(right_box)
+        self.info_card.append(self.info_details_box)
+
+        right_box.append(self.info_card)
+        self.paned.set_end_child(right_box)
 
     def _init_gstreamer(self) -> None:
         try:
@@ -475,6 +527,63 @@ class LiveTVView(Gtk.Box):
     def _on_open_signal_clicked(self, _btn: Gtk.Button) -> None:
         ch_num = self.current_channel.guide_number if self.current_channel else ""
         self.on_inspect_signal(ch_num)
+
+    def toggle_sidebar(self, force: Optional[bool] = None) -> bool:
+        """Collapse or expand the left channel list panel."""
+        is_visible = self.left_box.get_visible()
+        new_state = (not is_visible) if force is None else force
+        self.left_box.set_visible(new_state)
+        self.btn_toggle_sidebar.set_icon_name(
+            "sidebar-show-symbolic" if new_state else "sidebar-hide-symbolic"
+        )
+        self.btn_toggle_sidebar.set_tooltip_text(
+            "Collapse Channel Sidebar" if new_state else "Expand Channel Sidebar"
+        )
+        return new_state
+
+    def _on_toggle_info_card(self, btn: Gtk.Button) -> None:
+        vis = not self.info_details_box.get_visible()
+        self.info_details_box.set_visible(vis)
+        btn.set_icon_name("pan-down-symbolic" if vis else "pan-up-symbolic")
+
+    def _on_video_clicked(self, gesture: Gtk.GestureClick, n_press: int, _x: float, _y: float) -> None:
+        if n_press == 2:
+            self._toggle_theater_fullscreen()
+
+    def _toggle_theater_fullscreen(self) -> None:
+        root = self.get_root()
+        if not isinstance(root, Gtk.Window):
+            return
+        is_fs = root.is_fullscreen()
+        if not is_fs:
+            # Enter Fullscreen / Theater mode
+            root.fullscreen()
+            self.left_box.set_visible(False)
+            self.ctrl_bar.set_visible(False)
+            self.info_card.set_visible(False)
+            self.btn_fullscreen.set_icon_name("view-restore-symbolic")
+            self.btn_fullscreen.set_label("Restore")
+            self._update_hud()
+            self.hud_box.set_visible(True)
+        else:
+            # Exit Fullscreen / Theater mode
+            root.unfullscreen()
+            self.left_box.set_visible(True)
+            self.ctrl_bar.set_visible(True)
+            self.info_card.set_visible(True)
+            self.btn_fullscreen.set_icon_name("view-fullscreen-symbolic")
+            self.btn_fullscreen.set_label("Fullscreen")
+            self.hud_box.set_visible(False)
+
+    def _update_hud(self) -> None:
+        if self.current_channel:
+            self.hud_lbl_channel.set_text(self.current_channel.guide_number)
+            now_prog, _ = self.epg.get_now_and_next(self.current_channel.guide_number)
+            title = now_prog.title if now_prog else self.current_channel.guide_name
+            self.hud_lbl_title.set_text(f"{self.current_channel.guide_name} — {title}")
+        else:
+            self.hud_lbl_channel.set_text("Live")
+            self.hud_lbl_title.set_text("HDHomeRun Player")
 
     def _update_channel_info_panel(self) -> None:
         ch = self.current_channel
