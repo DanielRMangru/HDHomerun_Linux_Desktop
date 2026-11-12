@@ -1,35 +1,70 @@
 # HDHomeRun Ubuntu Desktop (`hdhomerun-desktop`)
 
-A robust, native **GTK4 + Libadwaita** GUI application for **Ubuntu Desktop** that provides complete control over **SiliconDust HDHomeRun** network TV tuners — including hardware channel scanning, adding and blocking channels, real-time RF signal metering, an interactive Electronic Program Guide (EPG), live TV playback, and local DVR recording.
+A robust, native **GTK4 + Libadwaita** GUI application for **Ubuntu Desktop** that provides complete control over **SiliconDust HDHomeRun** network TV tuners — including hardware channel scanning, adding and blocking channels, real-time RF signal metering, an interactive Electronic Program Guide (EPG), live TV playback with fullscreen & collapsible panels, and local DVR recording.
+
+![Live TV Playback](screenshots/Screenshot%20From%202026-11-12%2012-12-54.png)
 
 ---
 
-## Features
+## Features & Screenshots
 
-1. **Automatic Network Discovery & Native Control Protocol**
-   - Automatically discovers HDHomeRun devices on your local network via native UDP broadcast on port `65001` (`libhdhomerun` binary TLV protocol), SiliconDust local HTTP discovery, or manual IP configuration.
-   - Displays hardware model, firmware version, device ID, tuner count, and active signal source.
+### 1. Live TV Playback with Fullscreen & Collapsible Panels
+* **Embedded Player**: Built-in GStreamer (`gtk4paintablesink`) player directly inside the GTK4 window, plus one-click launch in **VLC** (`vlc`), `mpv`, or `ffplay`.
+* **Collapsible Sidebar & Metadata**: Collapse or expand the channel selector sidebar (`Ctrl+B` or sidebar button) and the program details card for maximum viewing area.
+* **Fullscreen & Theater Mode**: Press `F11`, double-click the video, or click the **Fullscreen** button to expand video across your entire display with a floating on-screen channel HUD.
+* **Instant Recording**: Single-click to start recording the live broadcast immediately to local disk.
 
-2. **Channel Management (Scan, Add, Favorite, Block)**
-   - **Hardware Channel Scanner**: Trigger and monitor `Antenna` or `Cable` frequency scans directly on the HDHomeRun with a real-time progress bar.
-   - **Add Custom Channels**: Define custom virtual channels or stream URLs alongside hardware-detected channels.
-   - **Block / Disable & Favorite**: Block unwanted channels (synced both to HDHomeRun hardware via `/lineup.post?favorite=x<ch>` and local filters) and mark Favorites (`★`).
+![Live TV Playback](screenshots/Screenshot%20From%202026-11-12%2012-12-54.png)
 
-3. **Real-Time RF Signal Meter & Tuner Diagnostics**
-   - Queries both HTTP `/status.json` and native TCP port `65001` (`/tunerN/status`, `/tunerN/vstatus`, `/tunerN/streaminfo`).
-   - Renders live Cairo radial gauges and a 60-second rolling time-series chart for **Signal Strength (`SS`)**, **Signal-to-Noise Quality (`SNQ`)**, and **Symbol Error Quality (`SEQ`)**, plus carrier frequency (MHz), stream bitrate (Mbps), and transport stream subchannel mux listings.
-   - **Active Signal Probe & Full Lineup Sweep**: Lock any virtual channel or raw RF channel (`auto:24`) while aiming your antenna, or sweep all active channels sequentially.
+---
 
-4. **Electronic Program Guide (EPG)**
-   - Automatically fetches multi-hour guide listings from the **SiliconDust HDHomeRun Guide API** (using the device's `DeviceAuth`) with local caching and optional **XMLTV** file/URL fallback.
-   - Interactive horizontal timeline grid, keyword/category search, program synopses, and one-click **Watch Channel** or **Record Program**.
+### 2. Electronic Program Guide (EPG)
+* **Automatic Guide Fetching**: Slices multi-hour guide listings directly from the **SiliconDust HDHomeRun Guide API** (using device `DeviceAuth`) with local persistent caching and optional **XMLTV** file/URL support.
+* **Interactive Timeline Grid**: Smooth horizontal timeline with `-2h`, `Now`, and `+2h` navigation markers.
+* **Search & Program Details**: Full-text show/movie/sports search, detailed episode synopsis, original air date, and categories.
+* **One-Click Scheduling**: Schedule upcoming airings directly into the local DVR scheduler from the program guide.
 
-5. **Live TV Playback (Embedded + External)**
-   - Built-in **GStreamer (`gtk4paintablesink`)** live TV player directly inside the GTK4 window, plus one-click launch in **VLC** (`vlc`), `mpv`, or `ffplay`.
+![Program Guide](screenshots/Screenshot%20From%202026-11-12%2012-13-00.png)
 
-6. **Local DVR & Recording Scheduler**
-   - Record live channels immediately or schedule upcoming programs from the EPG or Manual Timer dialog to local disk (`~/Videos/HDHomeRun` by default) as MPEG-TS (`.ts`) or `.mp4` (via `ffmpeg -c copy`).
-   - Includes a background scheduler thread and a headless `--daemon` CLI mode.
+---
+
+### 3. Channel Management (Scan, Add, Favorite, Block)
+* **Hardware Channel Scanner**: Trigger and monitor hardware `Antenna` or `Cable` frequency scans directly on the HDHomeRun with real-time progress percentage and found channel counters.
+* **Add Custom Channels**: Define custom virtual channels, subchannels, and manual stream URLs alongside hardware-detected channels.
+* **Favorite & Block/Disable**: Toggle channel favorites (`★`) and block/disable unwanted channels. State synchronizes directly with the HDHomeRun hardware (`/lineup.post?favorite=x<ch>`) as well as local application views.
+* **Search & Filter**: Filter channels instantly by All, Active, Favorites, Blocked, or Custom.
+
+![Channels and Scanner](screenshots/Screenshot%20From%202026-11-12%2012-13-04.png)
+
+---
+
+### 4. Real-Time RF Signal Meter & Tuner Diagnostics
+* **Live Hardware Telemetry**: Queries both HTTP `/status.json` and native TCP port `65001` control protocol (`/tunerN/status`, `/tunerN/vstatus`, `/tunerN/streaminfo`).
+* **Visual Gauges & Rolling History Chart**: Real-time radial gauges and a 60-second time-series history graph for **Signal Strength (`SS`)**, **Signal-to-Noise Quality (`SNQ`)**, and **Symbol Error Quality (`SEQ`)**, along with carrier frequency (MHz), modulation lock status (`8vsb`, `qam`), and stream bitrate (Mbps).
+* **Active Signal Probe**: Lock onto any virtual channel or raw RF frequency while adjusting or aiming your antenna.
+* **Sweep All Channels**: Automatically sweep through every channel in your lineup to measure and benchmark live RF signal quality across your entire channel list.
+
+![Signal Meter](screenshots/Screenshot%20From%202026-11-12%2012-13-09.png)
+
+---
+
+### 5. Local DVR & Recording Scheduler
+* **Scheduled & Instant Recording**: Capture live TV or scheduled upcoming guide programs to local storage (`~/Videos/HDHomeRun` by default) in MPEG-TS (`.ts`) or `.mp4` format (using `ffmpeg -c copy`).
+* **Timer Management**: View active recordings, scheduled upcoming timers, and completed recordings with file sizes, timestamps, and playback options.
+* **Manual Timers**: Add custom timer recordings with custom channel selection, delay, and duration.
+* **Headless Background Daemon**: Run the DVR scheduler service in the background using `./run.sh --daemon`.
+
+![DVR Recordings](screenshots/Screenshot%20From%202026-11-12%2012-13-12.png)
+
+---
+
+### 6. Settings & Device Configuration
+* **Hardware Information**: View discovered tuner details including friendly name, model number, device ID, firmware version, and tuner count.
+* **Device Discovery & Manual IP**: Automatic UDP broadcast discovery on port `65001`, SiliconDust local HTTP discovery, or specify a manual device IP.
+* **Storage & Padding Preferences**: Customize recordings directory, container format (`ts` / `mp4`), ffmpeg remuxing, pre-roll padding, and post-roll padding.
+* **EPG & Playback Preferences**: Configure EPG source (SiliconDust API, XMLTV file/URL, or both) and default external player (`vlc`, `mpv`, `ffplay`).
+
+![Settings](screenshots/Screenshot%20From%202026-11-12%2012-13-16.png)
 
 ---
 
